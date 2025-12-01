@@ -5,10 +5,12 @@ import { requestsApi, statsApi } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RequestsTable } from '@/components/RequestsTable';
+import { RequestsKanban } from '@/components/RequestsKanban';
 import { RequestDetailsModal } from '@/components/RequestDetailsModal';
 import { StatsCard } from '@/components/StatsCard';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Clock, CheckCircle, XCircle, Filter, Search } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FileText, Clock, CheckCircle, XCircle, Filter, Search, LayoutGrid, Table } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AdminDashboard = () => {
@@ -184,18 +186,38 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Requests Table */}
-        <div className="bg-card rounded-lg border p-6">
-          <div className="flex items-center justify-between mb-4">
+        {/* Requests Display */}
+        <Tabs defaultValue="kanban" className="space-y-4">
+          <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">
               Requêtes ({filteredRequests.length})
             </h2>
+            <TabsList>
+              <TabsTrigger value="kanban" className="gap-2">
+                <LayoutGrid className="w-4 h-4" />
+                Vue Kanban
+              </TabsTrigger>
+              <TabsTrigger value="table" className="gap-2">
+                <Table className="w-4 h-4" />
+                Vue Tableau
+              </TabsTrigger>
+            </TabsList>
           </div>
-          <RequestsTable
-            requests={filteredRequests}
-            onViewDetails={setSelectedRequest}
-          />
-        </div>
+
+          <TabsContent value="kanban" className="bg-card rounded-lg border p-6">
+            <RequestsKanban
+              requests={filteredRequests}
+              onSelectRequest={setSelectedRequest}
+            />
+          </TabsContent>
+
+          <TabsContent value="table" className="bg-card rounded-lg border p-6">
+            <RequestsTable
+              requests={filteredRequests}
+              onViewDetails={setSelectedRequest}
+            />
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Request Details Modal */}
