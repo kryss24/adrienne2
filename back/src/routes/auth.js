@@ -19,7 +19,7 @@ router.post('/register', registerValidator, (req, res, next) => {
     const id = uuidv4();
 
     const stmt = db.prepare('INSERT INTO users (id, matricule, firstName, lastName, email, password, role, classId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-    stmt.run(id, matricule, firstName, lastName, email || null, hashed, role, classId || null);
+    stmt.run(id, matricule, firstName, lastName, email || null, hashed, role, classId || 1);
 
     const user = db.prepare('SELECT id, matricule, firstName, lastName, email, role, classId, createdAt FROM users WHERE id = ?').get(id);
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
