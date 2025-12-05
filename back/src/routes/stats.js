@@ -24,7 +24,7 @@ router.get('/class/:classId', authMiddleware, roleMiddleware('admin','superadmin
   try {
     if (req.user.role === 'admin') {
       const cls = db.prepare('SELECT * FROM classes WHERE id = ?').get(req.params.classId);
-      // if (!cls || cls.adminId !== req.user.id) return res.status(403).json({ message: 'Accès refusé' });
+      if (!cls || cls.adminId !== req.user.id) return res.status(403).json({ message: 'Accès refusé' });
     }
     const filter = `WHERE classId = '${req.params.classId}'`;
     res.json(buildStats(filter));

@@ -77,7 +77,7 @@ router.get('/:id', authMiddleware, (req, res, next) => {
     if (req.user.role === 'student' && row.studentId !== req.user.id) return res.status(403).json({ message: 'Accès refusé' });
     if (req.user.role === 'admin') {
       const cls = db.prepare('SELECT * FROM classes WHERE id = ?').get(row.classId);
-      // if (!cls || cls.adminId !== req.user.id) return res.status(403).json({ message: 'Accès refusé' });
+      if (!cls || cls.adminId !== req.user.id) return res.status(403).json({ message: 'Accès refusé' });
     }
     res.json(row);
   } catch (err) { next(err); }
@@ -95,7 +95,7 @@ router.patch('/:id/status', authMiddleware, roleMiddleware('admin', 'superadmin'
 
     if (req.user.role === 'admin') {
       const cls = db.prepare('SELECT * FROM classes WHERE id = ?').get(reqRow.classId);
-      // if (!cls || cls.adminId !== req.user.id) return res.status(403).json({ message: 'Accès refusé' });
+      if (!cls || cls.adminId !== req.user.id) return res.status(403).json({ message: 'Accès refusé' });
     }
 
     const stmt = db.prepare('UPDATE requests SET status = ?, updatedAt = datetime(\'now\'), processedBy = ?, processedAt = datetime(\'now\'), rejectionReason = ? WHERE id = ?');
@@ -122,7 +122,7 @@ router.delete('/:id', authMiddleware, (req, res, next) => {
     if (req.user.role === 'student' && row.studentId !== req.user.id) return res.status(403).json({ message: 'Accès refusé' });
     if (req.user.role === 'admin') {
       const cls = db.prepare('SELECT * FROM classes WHERE id = ?').get(row.classId);
-      // if (!cls || cls.adminId !== req.user.id) return res.status(403).json({ message: 'Accès refusé' });
+      if (!cls || cls.adminId !== req.user.id) return res.status(403).json({ message: 'Accès refusé' });
     }
 
     db.prepare('DELETE FROM requests WHERE id = ?').run(req.params.id);
