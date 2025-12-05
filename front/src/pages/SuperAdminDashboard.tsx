@@ -5,10 +5,22 @@ import { requestsApi, statsApi, usersApi, classesApi } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { RequestsTable } from '@/components/RequestsTable';
 import { RequestDetailsModal } from '@/components/RequestDetailsModal';
+import { UserEditModal } from '@/components/UserEditModal';
+import { ClassEditModal } from '@/components/ClassEditModal';
 import { StatsCard } from '@/components/StatsCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Users, GraduationCap, TrendingUp } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { FileText, Users, GraduationCap, TrendingUp, Edit, Trash2, Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 const SuperAdminDashboard = () => {
@@ -18,6 +30,12 @@ const SuperAdminDashboard = () => {
   const [classes, setClasses] = useState<Class[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [selectedClass, setSelectedClass] = useState<Class | null>(null);
+  const [classToDelete, setClassToDelete] = useState<Class | null>(null);
+  const [isCreatingClass, setIsCreatingClass] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,6 +58,38 @@ const SuperAdminDashboard = () => {
       toast.error('Erreur lors du chargement des données');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    
+    setDeleting(true);
+    try {
+      await usersApi.deleteUser(userToDelete.id);
+      toast.success(`${userToDelete.firstName} ${userToDelete.lastName} a été supprimé`);
+      setUserToDelete(null);
+      loadData();
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteClass = async () => {
+    if (!classToDelete) return;
+    
+    setDeleting(true);
+    try {
+      await classesApi.deleteClass(classToDelete.id);
+      toast.success(`La classe "${classToDelete.name}" a été supprimée`);
+      setClassToDelete(null);
+      loadData();
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -144,32 +194,48 @@ const SuperAdminDashboard = () => {
                       {classes.length} classe(s) enregistrée(s)
                     </CardDescription>
                   </div>
-                  <Button>Ajouter une classe</Button>
+                  <Button onClick={() => setIsCreatingClass(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Ajouter une classe
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {classes.map((classItem) => (
-                    <div
-                      key={classItem.id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
-                    >
-                      <div>
-                        <h3 className="font-semibold">{classItem.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {classItem.studentCount} étudiant(s)
-                        </p>
+                  {classes.map((classItem) => {
+                    const classAdmin = adminUsers.find(a => a.id === classItem.adminId);
+                    return (
+                      <div
+                        key={classItem.id}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                      >
+                        <div>
+                          <h3 className="font-semibold">{classItem.name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {classItem.studentCount} étudiant(s)
+                            {classAdmin && ` • Admin: ${classAdmin.firstName} ${classAdmin.lastName}`}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setSelectedClass(classItem)}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Modifier
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => setClassToDelete(classItem)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          Modifier
-                        </Button>
-                        <Button variant="destructive" size="sm">
-                          Supprimer
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -188,22 +254,36 @@ const SuperAdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {adminUsers.map((user) => (
+                    {adminUsers.map((adminUser) => (
                       <div
-                        key={user.id}
-                        className="flex items-center justify-between p-3 border rounded"
+                        key={adminUser.id}
+                        className="flex items-center justify-between p-3 border rounded hover:bg-accent/50 transition-colors"
                       >
                         <div>
                           <p className="font-medium">
-                            {user.firstName} {user.lastName}
+                            {adminUser.firstName} {adminUser.lastName}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {user.matricule}
+                            {adminUser.matricule} • {adminUser.email}
                           </p>
                         </div>
-                        <Button variant="ghost" size="sm">
-                          Modifier
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setSelectedUser(adminUser)}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Modifier
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => setUserToDelete(adminUser)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -220,18 +300,35 @@ const SuperAdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                    {studentUsers.map((user) => (
+                    {studentUsers.map((studentUser) => (
                       <div
-                        key={user.id}
-                        className="flex items-center justify-between p-3 border rounded"
+                        key={studentUser.id}
+                        className="flex items-center justify-between p-3 border rounded hover:bg-accent/50 transition-colors"
                       >
                         <div>
                           <p className="font-medium">
-                            {user.firstName} {user.lastName}
+                            {studentUser.firstName} {studentUser.lastName}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {user.matricule}
+                            {studentUser.matricule}
                           </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setSelectedUser(studentUser)}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Modifier
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => setUserToDelete(studentUser)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -250,6 +347,103 @@ const SuperAdminDashboard = () => {
         onClose={() => setSelectedRequest(null)}
         onUpdate={loadData}
       />
+
+      {/* User Edit Modal */}
+      <UserEditModal
+        user={selectedUser}
+        open={!!selectedUser}
+        onClose={() => setSelectedUser(null)}
+        onUpdate={loadData}
+        classes={classes}
+      />
+
+      {/* Class Edit Modal */}
+      <ClassEditModal
+        classItem={selectedClass}
+        open={!!selectedClass || isCreatingClass}
+        onClose={() => {
+          setSelectedClass(null);
+          setIsCreatingClass(false);
+        }}
+        onUpdate={loadData}
+        admins={adminUsers}
+        isCreating={isCreatingClass}
+      />
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer{' '}
+              <span className="font-semibold">
+                {userToDelete?.firstName} {userToDelete?.lastName}
+              </span>{' '}
+              ({userToDelete?.role === 'admin' ? 'Administrateur' : 'Étudiant'}) ?
+              <br />
+              <br />
+              Cette action est irréversible et supprimera toutes les données associées à cet utilisateur.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Supprimer
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Class Confirmation Dialog */}
+      <AlertDialog open={!!classToDelete} onOpenChange={() => setClassToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer la classe{' '}
+              <span className="font-semibold">"{classToDelete?.name}"</span> ?
+              <br />
+              <br />
+              Cette action est irréversible. Les étudiants de cette classe ne seront pas supprimés mais ne seront plus assignés à cette classe.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteClass}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Supprimer
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

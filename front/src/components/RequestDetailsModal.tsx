@@ -173,50 +173,32 @@ export const RequestDetailsModal: React.FC<RequestDetailsModalProps> = ({
             </Card>
 
             {/* Pièces jointes */}
-            {(() => {
-              let attachments: string[] = [];
-
-              // Normalisation : convertir en tableau si c'est une string JSON
-              if (Array.isArray(request.attachments)) {
-                attachments = request.attachments;
-              } else {
-                try {
-                  attachments = JSON.parse(request.attachments || "[]");
-                } catch {
-                  attachments = [];
-                }
-              }
-
-              return (
-                attachments.length > 0 && (
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <FileText className="w-4 h-4" />
-                        Pièces jointes ({attachments.length})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      {attachments.map((attachment, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center gap-3 p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors"
-                        >
-                          <div className="flex items-center justify-center w-10 h-10 rounded bg-primary/10">
-                            <FileText className="w-5 h-5 text-primary" />
-                          </div>
-                          <span className="text-sm flex-1 font-medium">{attachment}</span>
-                          <Button variant="ghost" size="sm">
-                            Télécharger
-                          </Button>
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                )
-              );
-            })()}
-
+            {request.attachments && request.attachments.length > 0 && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Pièces jointes ({request.attachments.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {request.attachments.map((attachment, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors"
+                    >
+                      <div className="flex items-center justify-center w-10 h-10 rounded bg-primary/10">
+                        <FileText className="w-5 h-5 text-primary" />
+                      </div>
+                      <span className="text-sm flex-1 font-medium">{attachment}</span>
+                      <Button variant="ghost" size="sm">
+                        Télécharger
+                      </Button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Raison de rejet si rejetée */}
             {request.status === 'rejected' && request.rejectionReason && (
