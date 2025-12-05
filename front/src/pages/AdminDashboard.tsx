@@ -43,6 +43,7 @@ const AdminDashboard = () => {
       ]);
       setRequests(requestsData);
       setStats(statsData);
+      // console.log('Loaded requests:', requestsData);
     } catch (error) {
       toast.error('Erreur lors du chargement des données');
     } finally {
