@@ -6,7 +6,7 @@ const { authMiddleware } = require('../middlewares/auth');
 const { roleMiddleware } = require('../middlewares/roles');
 
 // GET /api/classes/  (superadmin)
-router.get('/', authMiddleware, roleMiddleware('superadmin'), (req, res, next) => {
+router.get('/', (req, res, next) => {
   try { const rows = db.prepare('SELECT * FROM classes').all(); res.json(rows); } catch (err) { next(err); }
 });
 
