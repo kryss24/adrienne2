@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -6,8 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { toast } from 'sonner';
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, Check, ChevronsUpDown } from 'lucide-react';
+import { classesApi } from '@/services/api';
+import { Class } from '@/types';
+import { cn } from '@/lib/utils';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -23,6 +28,23 @@ const Register = () => {
     classId: '',
   });
   const [loading, setLoading] = useState(false);
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [loadingClasses, setLoadingClasses] = useState(true);
+  const [openClassCombobox, setOpenClassCombobox] = useState(false);
+
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const data = await classesApi.getAllClasses();
+        setClasses(data);
+      } catch (error) {
+        console.error('Erreur lors du chargement des classes:', error);
+      } finally {
+        setLoadingClasses(false);
+      }
+    };
+    fetchClasses();
+  }, []);
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -53,6 +75,8 @@ const Register = () => {
       setLoading(false);
     }
   };
+
+  const selectedClass = classes.find((cls) => cls.id === formData.classId);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/20 p-4">
@@ -136,15 +160,53 @@ const Register = () => {
 
               {formData.role === 'student' && (
                 <div className="space-y-2">
-                  <Label htmlFor="classId">ID de la classe</Label>
-                  <Input
-                    id="classId"
-                    type="text"
-                    placeholder="Identifiant de votre classe"
-                    value={formData.classId}
-                    onChange={(e) => handleChange('classId', e.target.value)}
-                    required
-                  />
+                  <Label>Filière / Classe</Label>
+                  <Popover open={openClassCombobox} onOpenChange={setOpenClassCombobox}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openClassCombobox}
+                        className="w-full justify-between font-normal"
+                        disabled={loadingClasses}
+                      >
+                        {loadingClasses
+                          ? "Chargement..."
+                          : selectedClass
+                          ? selectedClass.name
+                          : "Rechercher ou sélectionner une classe..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0 z-50 bg-popover" align="start">
+                      <Command>
+                        <CommandInput placeholder="Rechercher une filière..." />
+                        <CommandList>
+                          <CommandEmpty>Aucune classe trouvée.</CommandEmpty>
+                          <CommandGroup>
+                            {classes.map((cls) => (
+                              <CommandItem
+                                key={cls.id}
+                                value={cls.name}
+                                onSelect={() => {
+                                  handleChange('classId', cls.id);
+                                  setOpenClassCombobox(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    formData.classId === cls.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {cls.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               )}
 
