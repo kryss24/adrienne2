@@ -12,6 +12,12 @@ interface RequestCardProps {
 }
 
 export const RequestCard: React.FC<RequestCardProps> = ({ request, onViewDetails }) => {
+  // Ensure attachments is always an array to avoid runtime errors
+  const attachments = Array.isArray(request.attachments)
+    ? request.attachments
+    : request.attachments
+      ? [request.attachments]
+      : [];
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
@@ -25,23 +31,23 @@ export const RequestCard: React.FC<RequestCardProps> = ({ request, onViewDetails
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm line-clamp-2">{request.description}</p>
-        
+
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             <span>{format(new Date(request.createdAt), 'dd MMM yyyy', { locale: fr })}</span>
           </div>
-          {request.attachments && request.attachments.length > 0 && (
+          {attachments && attachments.length > 0 && (
             <div className="flex items-center gap-1">
               <FileText className="w-3 h-3" />
-              <span>{request.attachments.length} fichier(s)</span>
+              <span>{attachments.length} fichier(s)</span>
             </div>
           )}
         </div>
 
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           className="w-full"
           onClick={() => onViewDetails(request)}
         >

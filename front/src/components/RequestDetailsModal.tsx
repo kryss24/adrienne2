@@ -40,6 +40,12 @@ export const RequestDetailsModal: React.FC<RequestDetailsModalProps> = ({
 
   const canManageRequest = user?.role === 'admin' || user?.role === 'superadmin';
   const isPending = request.status === 'pending' || request.status === 'in_progress';
+  // Ensure attachments is always an array to prevent runtime errors
+  const attachments = Array.isArray(request.attachments)
+    ? request.attachments
+    : request.attachments
+      ? [request.attachments]
+      : [];
 
   const handleStatusChange = async (newStatus: string) => {
     if (!canManageRequest) return;
@@ -64,8 +70,8 @@ export const RequestDetailsModal: React.FC<RequestDetailsModalProps> = ({
   const statusTimeline = [
     { status: 'pending', label: 'En attente', icon: Clock, active: true },
     { status: 'in_progress', label: 'En traitement', icon: Loader2, active: request.status === 'in_progress' || request.status === 'validated' || request.status === 'transmitted' || request.status === 'rejected' },
-    { 
-      status: request.status === 'rejected' ? 'rejected' : request.status === 'transmitted' ? 'transmitted' : 'validated', 
+    {
+      status: request.status === 'rejected' ? 'rejected' : request.status === 'transmitted' ? 'transmitted' : 'validated',
       label: request.status === 'rejected' ? 'Rejetée' : request.status === 'transmitted' ? 'Transmise' : 'Validée',
       icon: request.status === 'rejected' ? XCircle : request.status === 'transmitted' ? Send : CheckCircle2,
       active: request.status === 'validated' || request.status === 'transmitted' || request.status === 'rejected'
@@ -91,13 +97,12 @@ export const RequestDetailsModal: React.FC<RequestDetailsModalProps> = ({
           <div className="relative flex justify-between">
             {statusTimeline.map((step, index) => (
               <div key={step.status} className="flex flex-col items-center gap-2">
-                <div className={`relative z-10 flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all ${
-                  step.active 
-                    ? step.status === 'rejected' 
+                <div className={`relative z-10 flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all ${step.active
+                    ? step.status === 'rejected'
                       ? 'bg-destructive border-destructive text-destructive-foreground shadow-lg'
-                      : 'bg-primary border-primary text-primary-foreground shadow-lg' 
+                      : 'bg-primary border-primary text-primary-foreground shadow-lg'
                     : 'bg-background border-muted-foreground/30 text-muted-foreground'
-                }`}>
+                  }`}>
                   <step.icon className={`w-5 h-5 ${step.icon === Loader2 && step.active ? 'animate-spin' : ''}`} />
                 </div>
                 <span className={`text-xs font-medium max-w-[80px] text-center ${step.active ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -173,16 +178,16 @@ export const RequestDetailsModal: React.FC<RequestDetailsModalProps> = ({
             </Card>
 
             {/* Pièces jointes */}
-            {request.attachments && request.attachments.length > 0 && (
+            {attachments && attachments.length > 0 && (
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    Pièces jointes ({request.attachments.length})
+                    Pièces jointes ({attachments.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {request.attachments.map((attachment, index) => (
+                  {attachments.map((attachment, index) => (
                     <div
                       key={index}
                       className="flex items-center gap-3 p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors"
